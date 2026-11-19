@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Lightbox · Eigrutel BD Academy</title>
+
+    <meta
+      name="description"
+      content="Table lumineuse bilingue pour décalquer, lettrer et construire une perspective sur iPad et iPhone."
+    />
+    <meta name="author" content="Simon Léturgie" />
+
+    <link rel="icon" type="image/png" href="favicon/favlightbox.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon/favlightbox.png" />
+
+    <style>
+      :root {
+        --page: #f3f4f6;
+        --paper: #ffffff;
+        --ink: #2d2436;
+        --muted: #69767a;
+        --blue: #1f3a44;
+        --red: #a63d40;
+        --border: rgba(31, 58, 68, 0.14);
+        --soft: #fafaf7;
+        --shadow: 0 12px 30px rgba(26, 26, 26, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          Inter,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          Arial,
+          sans-serif;
+        color: var(--ink);
+        background: var(--page);
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .page {
+        width: min(1100px, calc(100% - 28px));
+        margin: 0 auto;
+        padding: 34px 0 44px;
+      }
+
+      .hero {
+        text-align: center;
+        padding: 34px 18px 28px;
+      }
+
+      .kicker {
+        margin: 0 0 12px;
+        color: var(--red);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        color: var(--blue);
+        font-size: clamp(34px, 7vw, 66px);
+        line-height: 0.95;
+        letter-spacing: -0.04em;
+      }
+
+      .version {
+        display: inline-block;
+        margin-top: 14px;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .intro {
+        max-width: 760px;
+        margin: 22px auto 0;
+        font-size: 17px;
+        line-height: 1.6;
+        color: #46575c;
+      }
+
+      .intro-en {
+        margin-top: 10px;
+        color: var(--muted);
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 24px;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        padding: 10px 15px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #fff;
+        color: var(--blue);
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 800;
+        box-shadow: 0 4px 12px rgba(26, 26, 26, 0.05);
+      }
+
+      .button-primary {
+        background: var(--red);
+        border-color: var(--red);
+        color: #fff;
+      }
+
+      .panel {
+        margin-top: 22px;
+        padding: 24px;
+        border: 1px solid var(--border);
+        border-radius: 22px;
+        background: var(--paper);
+        box-shadow: var(--shadow);
+      }
+
+      .panel h2 {
+        margin: 0 0 14px;
+        color: var(--blue);
+        font-size: 22px;
+      }
+
+      .panel p {
+        margin: 0;
+        line-height: 1.65;
+      }
+
+      .features {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .feature {
+        padding: 16px;
+        border: 1px solid var(--border);
+        border-radius: 15px;
+        background: var(--soft);
+      }
+
+      .feature strong {
+        display: block;
+        margin-bottom: 5px;
+        color: var(--blue);
+        font-size: 14px;
+      }
+
+      .feature span {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .gallery {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 18px;
+      }
+
+      .figure {
+        margin: 0;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--soft);
+      }
+
+      .figure img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 16/10;
+        object-fit: cover;
+        background: #e9ecee;
+      }
+
+      .figure figcaption {
+        padding: 10px 12px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.4;
+      }
+
+      .meta {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .meta div {
+        padding: 14px;
+        border-top: 1px solid var(--border);
+      }
+
+      .meta strong {
+        display: block;
+        color: var(--blue);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .meta span {
+        display: block;
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .footer {
+        padding: 28px 10px 0;
+        text-align: center;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.65;
+      }
+
+      .footer a {
+        color: var(--blue);
+        text-decoration: none;
+        font-weight: 700;
+      }
+
+      @media (max-width: 760px) {
+        .page {
+          width: min(100% - 18px, 680px);
+          padding-top: 14px;
+        }
+        .hero {
+          padding: 28px 10px 20px;
+        }
+        .features,
+        .meta {
+          grid-template-columns: 1fr;
+        }
+        .gallery {
+          grid-template-columns: 1fr;
+        }
+        .panel {
+          padding: 18px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+<main class="page"><header class="hero">
+<p class="kicker"><a href="https://www.stripmee.com">Eigrutel BD Academy</a></p>
+<h1>Lightbox</h1><span class="version">Version 1.0.0</span>
+<p class="intro">Une table lumineuse pour décalquer un dessin sur papier, lettrer une bulle ou construire un décor en perspective sur iPad et iPhone.</p><p class="intro intro-en" lang="en">A light table for tracing artwork on paper, lettering a speech balloon or drawing a background in perspective on iPad and iPhone.</p>
+<div class="actions"><a class="button button-primary" href="lightbox.html">Ouvrir Lightbox / Open Lightbox</a>
+<a class="button" href="https://github.com/Eigrutel/eigrutel-lightbox">Code source / Source code</a>
+<a class="button" href="https://github.com/Eigrutel/eigrutel-lightbox/releases/latest">Version stable / Latest release</a></div></header>
+<section class="panel"><h2>Utilisation</h2><p>Importe ton dessin, ajuste sa taille et touche Figer avant de poser la feuille. Pour travailler sur fond blanc, ouvre directement les guides de lettrage ou de perspective.</p></section>
+<section class="panel" lang="en"><h2>Getting started</h2><p>Import your drawing, adjust its size and tap Freeze before placing paper on the screen. For a blank light table, open the lettering or perspective guides directly.</p></section>
+<footer>© 2026 Simon Léturgie · Eigrutel BD Academy</footer></main></body></html>

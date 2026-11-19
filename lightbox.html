@@ -1,0 +1,794 @@
+<!doctype html>
+<!--
+Eigrutel Lab - Atelier d'outils libres pour la bande dessinée
+Programme conçu et développé par Simon Léturgie dans le cadre d'Eigrutel BD Academy.
+Nom : Lightbox
+Version : 1.0.0
+Date : 19-11-2026
+Code : GNU AGPL v3.0 ou version ultérieure.
+Documentation et modèles : CC BY-SA 4.0, sauf mention contraire.
+Marques, logos et signes distinctifs Eigrutel / Eigrutel Lab / Eigrutel BD Academy : réservés.
+-->
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><title>Lightbox · Eigrutel BD Academy</title>
+<link rel="icon" type="image/png" href="favicon/favlightbox.png">
+<link rel="apple-touch-icon" href="favicon/favlightbox.png">
+<meta name="apple-mobile-web-app-title" content="Lightbox">
+<style>
+* {
+  box-sizing:border-box
+}
+html,body {
+  margin:0;
+  height:100%;
+  overflow:hidden;
+  overscroll-behavior:none
+}
+body {
+  font:15px Inter,Helvetica,Arial,sans-serif;
+  color:#1f3a44;
+  background:white;
+  -webkit-user-select:none;
+  user-select:none;
+  -webkit-touch-callout:none
+}
+#surface,#shade {
+  position:absolute;
+  inset:0;
+  overflow:hidden;
+  touch-action:none
+}
+#imageLayer {
+  position:absolute;
+  left:0;
+  top:0;
+  transform-origin:0 0;
+  pointer-events:none;
+  max-width:none
+}
+#imageLayer {
+  isolation:isolate;
+  background:white;
+  overflow:hidden;
+  line-height:0;
+}
+#photo {display:block;max-width:none}
+.inkCopy {
+  position:absolute;
+  inset:0;
+  mix-blend-mode:multiply;
+  pointer-events:none;
+}
+#shade {
+  background:black;
+  pointer-events:none;
+  opacity:0
+}
+header,footer,#unlock {
+  position:absolute;
+  z-index:2
+}
+header {
+  top:max(10px,env(safe-area-inset-top));
+  left:max(12px,env(safe-area-inset-left));
+  right:max(12px,env(safe-area-inset-right));
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  pointer-events:none
+}
+header>* {
+  pointer-events:auto
+}
+h1 {
+  font-size:20px;
+  letter-spacing:-.045em;
+  margin:0;
+  background:#fff;
+  padding:7px 10px;
+  border-radius:6px
+}
+small {
+  display:block;
+  color:#51646b;
+  text-transform:uppercase;
+  font-size:9px;
+  letter-spacing:.12em
+}
+button {
+  font:inherit;
+  font-weight:600;
+  border:1px solid #c7ced0;
+  color:inherit;
+  background:white;
+  border-radius:8px;
+  padding:0 14px;
+  min-height:44px;
+  cursor:pointer;
+  touch-action:manipulation
+}
+button:disabled,input:disabled {
+  opacity:.45
+}
+button:focus-visible,input:focus-visible {
+  outline:3px solid #c47a2c
+}
+#freeze,#open {
+  background:#1f3a44;
+  color:white;
+  border-color:#1f3a44
+}
+footer {
+  bottom:max(10px,env(safe-area-inset-bottom));
+  left:50%;
+  transform:translateX(-50%);
+  width:min(420px,calc(100% - 32px));
+  background:#f4f1ea;
+  padding:12px 14px;
+  border:1px solid #dad9d3;
+  border-radius:14px;
+  box-shadow:0 3px 18px #1f3a4414;
+  display:flex;
+  align-items:center;
+  gap:14px
+}
+label {
+  flex:1;
+  min-width:0;
+  font-size:13px;
+  font-weight:600
+}
+output {
+  float:right;
+  font-variant-numeric:tabular-nums;
+  font-weight:400
+}
+input[type=range] {
+  display:block;
+  width:100%;
+  height:28px;
+  margin:0;
+  accent-color:#1f3a44
+}
+#empty {
+  position:absolute;
+  top:43%;
+  left:50%;
+  width:90%;
+  text-align:center;
+  transform:translate(-50%,-50%)
+}
+#empty p {
+  color:#53676c
+}
+#unlock {
+  right:max(12px,env(safe-area-inset-right));
+  top:max(12px,env(safe-area-inset-top));
+  font-size:12px;
+  background:#fff;
+  color:#43575e;
+  touch-action:none
+}
+#unlock.holding {
+  background:#1f3a44;
+  color:white
+}
+#error {
+  position:absolute;
+  top:64px;
+  left:12px;
+  background:white;
+  color:#a63d40
+}
+#error:empty {
+  display:none
+}
+[hidden],.locked header,.locked footer {
+  display:none!important
+}
+@media(max-width:520px) {
+  footer {
+    gap:12px
+  }
+}
+#tools {
+  display:flex;
+  gap:4px
+}
+button[aria-expanded=true],button[aria-pressed=true] {
+  background:#1f3a44;
+  color:white
+}
+.panel {
+  position:absolute;
+  z-index:3;
+  right:max(12px,env(safe-area-inset-right));
+  top:calc(max(10px,env(safe-area-inset-top)) + 50px);
+  bottom:auto;
+  width:min(330px,calc(100% - 24px));
+  max-height:calc(100% - 156px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow:auto;
+  overscroll-behavior:contain;
+  background:#f4f1ea;
+  border:1px solid #d4d5cd;
+  border-radius:12px;
+  padding:14px;
+  box-shadow:0 4px 20px #1f3a4420
+}
+.panel label {
+  display:block;
+  margin:9px 0
+}
+.panel select,.panel input[type=number] {
+  width:100%;
+  min-height:40px;
+  border:1px solid #bcc6c8;
+  border-radius:6px;
+  background:white;
+  color:inherit;
+  padding:4px 8px;
+  font:inherit;
+  font-size:16px
+}
+.panel input[type=checkbox] {
+  width:19px;
+  height:19px;
+  vertical-align:middle;
+  accent-color:#1f3a44
+}
+.panel fieldset {
+  border:0;
+  padding:0;
+  margin:0
+}
+.row {
+  display:flex;
+  gap:10px;
+  align-items:center
+}
+.panel details {
+  border-top:1px solid #d0d3cc;
+  padding:10px 0
+}
+.panel summary {
+  cursor:pointer;
+  font-weight:600;
+  padding:4px 0
+}
+.panel p {
+  font-size:13px;
+  margin:7px 0
+}
+.locked .panel,.locked #empty,.locked #error,.locked #handle {
+  display:none!important
+}
+#grid,#staff {
+  position:absolute;
+  pointer-events:none;
+  overflow:visible
+}
+#grid {
+  inset:0;
+  width:100%;
+  height:100%;
+  overflow:hidden
+}
+#handle {
+  position:absolute;
+  min-height:44px;
+  padding:0 10px;
+  font-size:12px;
+  touch-action:none;
+  cursor:grab
+}
+#rule {
+  display:block;
+  height:10px;
+  border:solid #1f3a44;
+  border-width:0 1px 1px;
+  margin:14px 0
+}
+footer button {
+  flex:none
+}
+@media(max-height:450px) {
+  #empty {
+    top:46%
+  }
+  #empty h2 {
+    margin:4px
+  }
+}
+.lockControls {
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:8px;
+  margin:10px 0
+}
+.lockControls button {
+  display:inline-flex;
+  align-items:center;
+  gap:8px
+}
+header h1 {
+  text-align:center
+}
+h1 small a {
+  color:#A63D40;
+  text-decoration:none
+}
+h1 small a:hover {
+  text-decoration:underline
+}
+#projection {
+  font-size:14px;
+  font-weight:400
+}
+.lockControls .closed,.lockControls button[aria-pressed=true] .opened {
+  display:none
+}
+.lockControls button[aria-pressed=true] .closed {
+  display:inline
+}
+#langSwitch {
+  font-size:12px;
+  padding:0 8px;
+  color:#52636a
+}
+html[lang=fr] #langSwitch [lang=fr],html[lang=en] #langSwitch [lang=en] {
+  color:#a63d40;
+  font-weight:800
+}
+/* Sur téléphone, le cartouche occupe la largeur du titre et les commandes restent sur une ligne. */
+@media(max-width:520px) {
+  header h1 {
+    width:94px;
+    flex:none;
+    padding:5px 4px
+  }
+  header small {
+    font-size:8px;
+    line-height:1.25;
+    letter-spacing:.08em
+  }
+  #tools {
+    flex:none;
+    white-space:nowrap
+  }
+  #tools button {
+    padding-inline:8px
+  }
+}
+@media(max-width:340px) {
+  header {
+    column-gap:8px
+  }
+  header h1 {
+    width:86px
+  }
+  #tools button {
+    padding-inline:6px
+  }
+}
+</style></head><body>
+<!-- Filtres appliqués uniquement à l’image importée -->
+<svg width="0" height="0" aria-hidden="true" style="position:absolute;pointer-events:none"><defs>
+<filter id="inkContrast" color-interpolation-filters="sRGB" x="0%" y="0%" width="100%" height="100%">
+<feComponentTransfer><feFuncR id="curveR" type="table" tableValues="0 1"/><feFuncG id="curveG" type="table" tableValues="0 1"/><feFuncB id="curveB" type="table" tableValues="0 1"/></feComponentTransfer>
+</filter>
+</defs></svg>
+<main id="surface" aria-label="Table lumineuse"><div id="imageLayer"><img id="photo" alt="Modèle à décalquer" draggable="false" hidden><img class="inkCopy" alt="" hidden><img class="inkCopy" alt="" hidden></div><svg id="grid" aria-hidden="true"></svg><svg id="staff" aria-hidden="true"></svg><button id="handle" hidden><span data-en="Move lettering guide">Déplacer la portée</span></button><div id="shade"></div></main>
+<!-- En-tête et commandes de la table -->
+<header>
+  <h1><small><a href="https://www.stripmee.com" target="_blank" rel="noreferrer">Eigrutel BD Academy</a></small>Lightbox</h1>
+  <nav id="tools">
+    <button id="imageTab" aria-expanded="false" aria-controls="imagePanel">Image</button>
+    <button id="guideTab" aria-expanded="false" aria-controls="guidePanel">Guides</button>
+    <button id="langSwitch" type="button" aria-label="Switch to English"><span lang="fr">FR</span><span aria-hidden="true"> / </span><span lang="en">EN</span></button>
+  </nav>
+</header>
+<section id="empty"><h2><span data-en="Light table">Table lumineuse</span></h2><p><span data-en="Import a drawing or open Guides to work on a blank light table.">Importe un dessin ou ouvre les guides pour travailler sur fond blanc.</span></p><button id="open"><span data-en="Import image">Importer une image</span></button></section>
+<input id="file" type="file" accept="image/*" hidden><p id="error" role="alert"></p>
+<section class="panel" id="imagePanel" aria-label="Image" hidden>
+<button id="replace">Importer une image</button>
+<fieldset id="imageSettings" disabled>
+<div class="lockControls"><button id="imageLock" type="button" aria-pressed="false">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path class="opened" d="M8 10V7a4 4 0 0 1 8 0"/><path class="closed" d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 14v3"/></svg>
+<span data-en="Lock image position and size">Verrouiller le cadrage</span></button>
+<button type="button" id="scaleLock" aria-pressed="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path class="opened" d="M8 10V7a4 4 0 0 1 8 0"/><path class="closed" d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 14v3"/></svg><span data-en="Lock image size">Verrouiller la taille</span></button></div>
+<label><span data-en="Size">Taille</span> <output id="sizeValue">100 %</output><input id="size" type="range" min="10" max="2000" value="100"></label>
+<label><span data-en="Lighten image">Éclaircir l’image</span> <output id="fadeValue">0 %</output><input id="fade" type="range" min="0" max="100" value="0"></label>
+<label><span data-en="Strengthen linework">Renforcer le trait</span> <output id="weightValue">0 %</output><input id="weight" type="range" min="0" max="100" value="0"></label>
+<label><span data-en="Lighten gray tones">Éclaircir les gris</span> <output id="contrastValue">0 %</output><input id="contrast" type="range" min="0" max="100" value="0"></label>
+<button id="original"><span data-en="Reset contrast">Contraste d’origine</span></button>
+<label><span data-en="Flip image">Retournement</span></label><div class="row"><button id="mirror" aria-pressed="false"><span data-en="Flip horizontally">Miroir horizontal</span></button></div>
+<div class="row" style="margin-top:12px"><button id="fit"><span data-en="Fit to screen">Ajuster</span></button><button id="remove"><span data-en="Remove image">Retirer l’image</span></button></div></fieldset></section>
+<section class="panel" id="guidePanel" aria-label="Guides" hidden>
+<label><input id="letters" type="checkbox"> <span data-en="Lettering guide">Portée de lettrage</span></label>
+<div id="letterSettings" hidden>
+<label>Mode<select id="method"><option value="manual" data-en="Manual">Manuel</option><option value="ames">Lettering Guide</option></select></label>
+<div id="manual" class="row"><label><span data-en="Letter height (mm)">Hauteur (mm)</span><input id="cap" type="number" min="0.5" max="30" step="0.1" value="3"></label><label><span data-en="Line gap (mm)">Interligne (mm)</span><input id="gap" type="number" min="0" max="30" step="0.1" value="1.5"></label></div>
+<div id="ames" hidden><label><span data-en="System">Système</span><select id="ratio"><option value="reinhardt">2/3 · Reinhardt</option><option value="equal" data-en="Equally spaced capitals">Capitales équidistantes</option><option value="engineering" data-en="3/5 · Engineering">3/5 · Ingénierie</option></select></label><label><span data-en="Setting (1/32 in)">Réglage (1/32 de pouce)</span><input id="amesSize" type="number" min="2" max="10" step="0.5" value="3.5"></label></div>
+<div class="row"><label><span data-en="Number of lines">Nombre de lignes</span><input id="rows" type="number" min="1" max="40" value="6"></label><label><span data-en="Width (mm)">Largeur (mm)</span><input id="widthMM" type="number" min="5" max="300" value="100"></label></div>
+<details><summary><span data-en="Calibrate with a ruler">Étalonner avec une règle</span></summary><p><span data-en="Adjust the line until it measures 5 cm on your ruler. This device remembers the calibration.">Ajuste le trait à 5 cm sur ta règle. L’étalonnage est mémorisé sur cet appareil.</span></p><span id="rule"></span><input id="cal" aria-label="Longueur du trait de 5 cm" type="range" min="100" max="280" step="0.5" value="189"></details>
+</div>
+<label><input id="perspective" type="checkbox"> <span data-en="Perspective grid">Grille de perspective</span></label>
+<div id="perspSettings" hidden><label><select id="projection" aria-label="Type de perspective"><option value="one" data-en="One vanishing point">Un point de fuite</option><option value="two" data-en="Two vanishing points">Deux points de fuite</option></select></label>
+<label><span data-en="Horizon height">Hauteur de l’horizon</span> <output id="horizonValue"></output><input id="horizon" type="range" min="-50" max="150" value="40"></label>
+<label id="single"><span data-en="Vanishing point position">Position du point de fuite</span> <output id="vpValue"></output><input id="vp" type="range" min="-300" max="400" value="50"></label>
+<div id="double" hidden>
+<p id="positionHint"><span data-en="0% is the left edge and 100% is the right edge.">0 % correspond au bord gauche et 100 % au bord droit.</span></p>
+<label><span data-en="Vanishing point 1 (blue)">Point de fuite 1 (bleu)</span> <output id="leftValue"></output><input id="left" type="range" min="-300" max="400" value="-65" aria-describedby="positionHint"></label>
+<label><span data-en="Vanishing point 2 (ochre)">Point de fuite 2 (ocre)</span> <output id="rightValue"></output><input id="right" type="range" min="-300" max="400" value="165" aria-describedby="positionHint"></label>
+</div>
+<label><span data-en="Grid density">Densité</span> <output id="densityValue"></output><input id="density" type="range" min="3" max="24" value="10"></label></div>
+<label><span data-en="Guide opacity">Opacité des guides</span> <output id="opacityValue"></output><input id="opacity" type="range" min="5" max="100" value="65"></label></section>
+<footer><label><span data-en="Brightness">Luminosité</span> <output id="lightValue">100 %</output><input id="light" type="range" min="0" step="1" max="100" value="100"></label><button id="freeze"><span data-en="Freeze">Figer</span></button></footer>
+<button id="unlock" hidden><span data-en="Hold for 1 second to unlock">Maintenir 1 s pour libérer</span></button>
+<script>
+'use strict';
+const el=id=>document.getElementById(id);
+const surface=el('surface'), photo=el('photo'), size=el('size'), light=el('light'), unlock=el('unlock');
+const imageLayer=el('imageLayer');
+const inkCopies=Array.from(imageLayer.querySelectorAll('.inkCopy'));
+const points=new Map();
+let x=0,y=0,scale=1,base=1,locked=false,objectURL='',loadVersion=0;
+let imageLocked=false,scaleLocked=false;
+let language='fr';
+const labels=Array.from(document.querySelectorAll('[data-en]'),node=>({node,fr:node.textContent,en:node.dataset.en}));
+function percent(value){return value+(language==='en'?'%':' %')}
+function updateImageButton(){
+  el('replace').textContent=objectURL
+    ? (language==='en'?'Change image':'Changer d’image')
+    : (language==='en'?'Import image':'Importer une image');
+}
+function imageError(){
+  return language==='en'?'Could not open this image. Try a PNG or JPEG file.':'Image illisible. Essaie un fichier PNG ou JPEG.';
+}
+function setLanguage(next){
+  language=next;
+  const english=language==='en';
+  document.documentElement.lang=language;
+  for(const label of labels)label.node.textContent=label[language];
+  surface.setAttribute('aria-label',english?'Light table':'Table lumineuse');
+  el('projection').setAttribute('aria-label',english?'Perspective type':'Type de perspective');
+  photo.alt=english?'Drawing to trace':'Modèle à décalquer';
+  el('cal').setAttribute('aria-label',english?'Length of the 5 cm calibration line':'Longueur du trait de 5 cm');
+  el('langSwitch').setAttribute('aria-label',english?'Passer en français':'Switch to English');
+  updateImageButton();
+  if(el('error').textContent)el('error').textContent=imageError();
+  for(const id of ['size','light','fade','weight','contrast','vp','horizon','left','right','opacity']){
+    el(id+'Value').value=percent(el(id).value);
+  }
+}
+el('langSwitch').onclick=()=>{
+  setLanguage(language==='fr'?'en':'fr');
+  try{localStorage.setItem('lightbox.language',language)}catch{}
+};
+function lockImage(value){
+  imageLocked=value;
+  points.clear();
+  el('imageLock').setAttribute('aria-pressed',String(value));
+  el('scaleLock').setAttribute('aria-pressed',String(scaleLocked));
+  el('scaleLock').disabled=imageLocked;
+  size.disabled=el('fit').disabled=imageLocked||scaleLocked;
+  el('mirror').disabled=imageLocked;
+}
+el('scaleLock').onclick=()=>{
+  scaleLocked=!scaleLocked;
+  lockImage(imageLocked);
+};
+el('imageLock').onclick=()=>lockImage(!imageLocked);
+
+// Le miroir se calcule dans le cadre déjà positionné pour éviter tout décalage.
+function render(){
+  const mx=el('mirror').getAttribute('aria-pressed')==='true'?-1:1;
+  const tx=x+(mx<0?photo.naturalWidth*scale:0);
+  imageLayer.style.transform='translate('+tx+'px,'+y+'px) scale('+scale*mx+','+scale+')';
+  size.value=Math.round(100*scale/base);
+  el('sizeValue').value=percent(size.value);
+}
+function fit(){
+  base=Math.min(surface.clientWidth/photo.naturalWidth,surface.clientHeight/photo.naturalHeight);
+  scale=base;
+  x=(surface.clientWidth-photo.naturalWidth*scale)/2;
+  y=(surface.clientHeight-photo.naturalHeight*scale)/2;
+  render();
+}
+function zoom(target,from,to){
+  const next=scaleLocked?scale:Math.max(base*.1,Math.min(base*Number(size.max)/100,target));
+  x=to.x-(from.x-x)*next/scale;
+  y=to.y-(from.y-y)*next/scale;
+  scale=next;
+  render();
+}
+for(const id of ['open','replace']) el(id).onclick=()=>el('file').click();
+el('file').onchange=async event=>{
+  const file=event.target.files[0];
+  event.target.value='';
+  if(!file)return;
+  const version=++loadVersion, url=URL.createObjectURL(file), image=new Image();
+  image.src=url;
+  try{
+    await image.decode();
+    if(version!==loadVersion){URL.revokeObjectURL(url);return}
+    photo.src=url;
+    await photo.decode();
+    if(objectURL)URL.revokeObjectURL(objectURL);
+    objectURL=url;
+    el('error').textContent='';
+    el('empty').hidden=true;
+    photo.hidden=el('replace').hidden=false;
+    el('imageSettings').disabled=false;updateImageButton();scaleLocked=false;lockImage(false);resetEffects();panel(null);
+    fit();
+  }catch{
+    URL.revokeObjectURL(url);
+    if(version===loadVersion)el('error').textContent=imageError();
+  }
+};
+el('fit').onclick=fit;
+size.oninput=()=>{
+  const center={x:surface.clientWidth/2,y:surface.clientHeight/2};
+  zoom(base*size.value/100,center,center);
+};
+light.oninput=()=>{
+  el('shade').style.opacity=0.7*(1-light.value/100);
+  el('lightValue').value=percent(light.value);
+};
+
+// Un doigt déplace le modèle. Avec deux doigts, leur milieu sert de pivot au zoom.
+function geometry(){
+  const [a,b]=points.values();
+  if(!b)return {x:a.x,y:a.y,d:0};
+  return {x:(a.x+b.x)/2,y:(a.y+b.y)/2,d:Math.hypot(a.x-b.x,a.y-b.y)};
+}
+surface.onpointerdown=e=>{
+  if(locked||imageLocked||!objectURL||points.size>=2||e.button!==0)return;
+  surface.setPointerCapture(e.pointerId);
+  points.set(e.pointerId,{x:e.clientX,y:e.clientY});
+};
+surface.onpointermove=e=>{
+  if(!points.has(e.pointerId)||locked)return;
+  const before=geometry();
+  points.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  const after=geometry();
+  zoom(before.d&&after.d?scale*after.d/before.d:scale,before,after);
+};
+surface.onpointerup=surface.onpointercancel=surface.onlostpointercapture=e=>points.delete(e.pointerId);
+document.addEventListener('gesturestart',e=>e.preventDefault(),{passive:false});
+surface.oncontextmenu=e=>e.preventDefault();
+let wake=null,hold=null,holdPointer=null;
+async function stayAwake(){
+  if(!locked||document.hidden||!navigator.wakeLock||wake)return;
+  try{
+    const token=await navigator.wakeLock.request('screen');
+    if(!locked){await token.release();return}
+    wake=token;
+    token.onrelease=()=>{if(wake===token)wake=null};
+  }catch{/* Le système peut refuser le maintien de l’écran allumé. */}
+}
+document.addEventListener('visibilitychange',()=>{cancelHold();stayAwake()});
+function cancelHold(){clearTimeout(hold);hold=null;holdPointer=null;unlock.classList.remove('holding')}
+
+// Le gel de la table masque les commandes et conserve les verrous propres à l’image.
+function setLock(value){
+  locked=value;
+  if(value) panel(null);
+  points.clear();cancelHold();
+  document.body.classList.toggle('locked',value);
+  unlock.hidden=!value;
+  if(value){unlock.focus({preventScroll:true});stayAwake()}
+  else{if(wake)wake.release().catch(()=>{});el('freeze').focus({preventScroll:true})}
+}
+el('freeze').onclick=()=>setLock(true);
+function startHold(){
+  if(!locked||hold!==null)return;
+  unlock.classList.add('holding');
+  hold=setTimeout(()=>setLock(false),1000);
+}
+unlock.onpointerdown=e=>{
+  if(e.button!==0||hold!==null)return;
+  holdPointer=e.pointerId;unlock.setPointerCapture(e.pointerId);startHold();
+};
+unlock.onpointermove=e=>{
+  if(e.pointerId!==holdPointer)return;
+  const r=unlock.getBoundingClientRect();
+  if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)cancelHold();
+};
+unlock.onpointerup=unlock.onpointercancel=unlock.onlostpointercapture=e=>{if(e.pointerId===holdPointer)cancelHold()};
+unlock.onkeydown=e=>{if([' ','Enter'].includes(e.key)){e.preventDefault();if(!e.repeat)startHold()}};
+unlock.onkeyup=unlock.onblur=window.onblur=cancelHold;
+// Les guides sont exprimés dans le repère de la table, indépendant du zoom de l’image.
+function panel(name){
+  for(const key of ['image','guide']){
+    const active=name===key;
+    el(key+'Panel').hidden=!active;
+    el(key+'Tab').setAttribute('aria-expanded',String(active));
+  }
+}
+for(const key of ['image','guide']){
+  el(key+'Tab').onclick=()=>panel(el(key+'Panel').hidden?key:null);
+}
+function refreshEmpty(){
+  el('empty').hidden=Boolean(objectURL)||el('letters').checked||el('perspective').checked;
+}
+
+// Renforcer le trait avant d’éclaircir les gris permet de combiner les deux réglages.
+function updateImageFilters(){
+  imageLayer.style.filter=Number(el('contrast').value)>0?'url(#inkContrast)':'none';
+}
+function strengthenLines(){
+  const strength=Number(el('weight').value)/100;
+  // Le dessin original reste visible. Deux copies décalées multiplient les tons
+  // sur fond blanc, avec une opacité proportionnelle à la force demandée.
+  inkCopies.forEach((copy,index)=>{
+    copy.hidden=!objectURL||strength===0;
+    if(copy.hidden){
+      copy.removeAttribute('src');
+      return;
+    }
+    if(copy.getAttribute('src')!==objectURL)copy.src=objectURL;
+    const offset=(index===0?-1:1)*strength;
+    copy.style.transform='translate('+offset+'px,'+offset+'px)';
+    copy.style.opacity=strength;
+  });
+  el('weightValue').value=percent(el('weight').value);
+  updateImageFilters();
+}
+el('weight').oninput=strengthenLines;
+function contrast(){
+  const amount=Number(el('contrast').value)/100;
+  if(amount>0){
+    // Une courbe continue préserve le noir et relève surtout les gris moyens.
+    const samples=Array.from({length:256},(_,i)=>{
+      const v=i/255;
+      return (1-(1-v)*Math.exp(-16*amount*v*v)).toFixed(6);
+    }).join(' ');
+    for(const channel of ['curveR','curveG','curveB'])el(channel).setAttribute('tableValues',samples);
+  }
+  updateImageFilters();
+  el('contrastValue').value=percent(el('contrast').value);
+}
+function lightenImage(){
+  imageLayer.style.opacity=1-Number(el('fade').value)/100;
+  el('fadeValue').value=percent(el('fade').value);
+}
+el('fade').oninput=lightenImage;
+function resetEffects(){
+  el('weight').value=0;strengthenLines();
+  el('fade').value=0;lightenImage();
+  el('contrast').value=0;contrast();
+  el('mirror').setAttribute('aria-pressed','false');
+}
+el('contrast').oninput=contrast;
+el('original').onclick=()=>{el('contrast').value=0;contrast()};
+el('mirror').onclick=()=>{
+  const mirror=el('mirror');
+  mirror.setAttribute('aria-pressed',String(mirror.getAttribute('aria-pressed')!=='true'));
+  render();
+};
+el('remove').onclick=()=>{
+  ++loadVersion;
+  scaleLocked=false;lockImage(false);
+  photo.removeAttribute('src');photo.hidden=true;
+  URL.revokeObjectURL(objectURL);objectURL='';strengthenLines();
+  el('imageSettings').disabled=true;
+  updateImageButton();
+  el('error').textContent='';
+  panel(null);refreshEmpty();
+};
+const clamp=(v,min,max)=>Math.min(max,Math.max(min,v));
+function number(id){
+  const field=el(id);
+  return clamp(field.value===''?Number(field.defaultValue):Number(field.value),+field.min,+field.max);
+}
+function stroke(svg,x1,y1,x2,y2,color,weight){
+  const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+  for(const [key,val] of Object.entries({x1,y1,x2,y2,stroke:color,'stroke-width':weight})){
+    line.setAttribute(key,val);
+  }
+  svg.appendChild(line);
+}
+const staff=el('staff'),handle=el('handle'),grid=el('grid');
+let staffX=null,staffY=null,drag=null;
+
+// La graduation étalonnée de 50 mm détermine la taille physique des lignes de lettrage.
+function drawStaff(){
+  staff.replaceChildren();
+  const enabled=el('letters').checked;
+  handle.hidden=!enabled;
+  if(!enabled)return;
+  const unit=number('cal')/50;
+  const manual=el('method').value==='manual';
+  const cap=(manual?number('cap'):number('amesSize')*25.4/32)*unit;
+  const equal=el('ratio').value==='equal';
+  const fraction=el('ratio').value==='engineering'?2/5:1/3;
+  const gap=manual?number('gap')*unit:cap*(equal?.5:fraction);
+  const width=number('widthMM')*unit;
+  const rows=Math.round(number('rows'));
+  const height=cap+(rows-1)*(cap+gap);
+  const w=surface.clientWidth,h=surface.clientHeight;
+  if(staffX===null){staffX=(w-width)/2;staffY=h*.37}
+  staffX=clamp(staffX,0,Math.max(0,w-120));
+  staffY=clamp(staffY,46,Math.max(46,h-60));
+  Object.assign(staff.style,{left:staffX+'px',top:staffY+'px',width:width+'px',height:height+'px'});
+  handle.style.left=staffX+'px';handle.style.top=(staffY-45)+'px';
+  for(let i=0;i<rows;i++){
+    const y=i*(cap+gap);
+    stroke(staff,0,y,width,y,'#1f3a44',1);
+    if(!manual&&!equal)stroke(staff,0,y+cap*fraction,width,y+cap*fraction,'#546b75',.7);
+    stroke(staff,0,y+cap,width,y+cap,'#1f3a44',1);
+  }
+}
+function drawGrid(){
+  grid.replaceChildren();
+  if(!el('perspective').checked)return;
+  const w=surface.clientWidth,h=surface.clientHeight;
+  const horizon=h*number('horizon')/100,density=number('density');
+  const corners=[[0,0],[0,h],[w,0],[w,h]];
+  function fan(vx,color){
+    const direction=vx>w/2?-1:1;
+    const radius=Math.max(...corners.map(([x,y])=>Math.hypot(x-vx,y-horizon)))+2;
+    // Hors cadre, répartir les rayons dans le seul secteur angulaire visible.
+    const angles=corners.map(([x,y])=>Math.atan2(y-horizon,direction*(x-vx)));
+    const outside=vx<0||vx>w;
+    const start=outside?Math.min(...angles):0;
+    const end=outside?Math.max(...angles):2*Math.PI;
+    const count=outside?density*2:density*4;
+    for(let i=0;i<count;i++){
+      const a=start+(i+.5)*(end-start)/count;
+      stroke(grid,vx,horizon,vx+direction*radius*Math.cos(a),horizon+radius*Math.sin(a),color,.9);
+    }
+  }
+  if(el('projection').value==='two'){
+    fan(w*number('left')/100,'#1f596d');
+    fan(w*number('right')/100,'#895927');
+  }else fan(w*number('vp')/100,'#1f596d');
+  stroke(grid,0,horizon,w,horizon,'#a63d40',1.4);
+}
+function updateGuides(){
+  const manual=el('method').value==='manual',single=el('projection').value==='one';
+  el('manual').hidden=!manual;el('ames').hidden=manual;
+  el('single').hidden=!single;el('double').hidden=single;
+  el('letterSettings').hidden=!el('letters').checked;
+  el('perspSettings').hidden=!el('perspective').checked;
+  for(const id of ['vp','horizon','left','right','density','opacity']){
+    el(id+'Value').value=id==='density'?el(id).value:percent(el(id).value);
+  }
+  staff.style.opacity=grid.style.opacity=number('opacity')/100;
+  el('rule').style.width=number('cal')+'px';
+  refreshEmpty();drawStaff();drawGrid();
+}
+try{
+  const stored=Number(localStorage.getItem('lightbox.ruler50'));
+  if(stored>=100&&stored<=280)el('cal').value=stored;
+}catch{}
+el('cal').onchange=()=>{try{localStorage.setItem('lightbox.ruler50',el('cal').value)}catch{}};
+el('guidePanel').addEventListener('input',updateGuides);
+el('guidePanel').addEventListener('change',e=>{
+  if(e.target.type==='number'){
+    const field=e.target;
+    field.value=clamp(Math.round(number(field.id)/Number(field.step||1))*Number(field.step||1),+field.min,+field.max).toFixed(field.step.includes('.')?1:0);
+    updateGuides();
+  }
+});
+handle.onpointerdown=e=>{
+  e.stopPropagation();
+  if(locked||drag||e.button!==0)return;
+  drag={id:e.pointerId,dx:e.clientX-staffX,dy:e.clientY-staffY};
+  handle.setPointerCapture(e.pointerId);
+};
+handle.onpointermove=e=>{
+  if(!drag||drag.id!==e.pointerId||locked)return;
+  staffX=e.clientX-drag.dx;staffY=e.clientY-drag.dy;drawStaff();
+};
+handle.onpointerup=handle.onpointercancel=handle.onlostpointercapture=e=>{
+  if(drag&&drag.id===e.pointerId)drag=null;
+};
+window.addEventListener('resize',updateGuides);
+updateGuides();
+let preferredLanguage='fr';
+try{if(localStorage.getItem('lightbox.language')==='en')preferredLanguage='en'}catch{}
+setLanguage(preferredLanguage);
+</script></body></html>
